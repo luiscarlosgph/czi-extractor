@@ -39,12 +39,12 @@ def convert_czi_to_png(input_dir, output_dir):
 def main():
     # Read command line arguments
     parser = argparse.ArgumentParser(description="Convert CZI images to PNG format with slice number suffixes.")
-    parser.add_argument("--input-dir", required=True, help="Path to the input directory containing CZI images.")
-    parser.add_argument("--output-dir", required=True, help="Path to the output directory for saving PNG images.")
+    parser.add_argument("--input", required=True, help="Path to the input directory containing CZI images.")
+    parser.add_argument("--output", required=True, help="Path to the output directory for saving PNG images.")
     args = parser.parse_args()
 
     # Perform the conversion
-    convert_czi_to_png(args.input_dir, args.output_dir)
+    convert_czi_to_png(args.input, args.output)
 
     print("Conversion complete. PNG images saved in the output folder.")
 
