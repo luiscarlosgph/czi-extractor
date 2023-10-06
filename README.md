@@ -25,7 +25,7 @@ The output directory should not already exist, it will be created by the script.
 Author
 ------
 
-Copyright © Luis Carlos Garcia Peraza Herrera (luiscarlos.gph@gmail.com) 2023-Present.
+Copyright © 2023-Present Luis Carlos Garcia Peraza Herrera (luiscarlos.gph@gmail.com).
 
 
 License
