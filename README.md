@@ -19,7 +19,7 @@ Run
 $ python -m czi_extractor.run --input <path_to_your_czi_image> --output <path_to_output_directory>
 ```
 
-The output directory will be created by the script (i.e. it should not exist).
+The output directory will be created by the script (i.e. the output directory should not already exist).
 
 
 Author
