@@ -9,7 +9,7 @@ this_directory = path.abspath(path.dirname(__file__))
 with open(path.join(this_directory, 'README.md'), encoding='utf-8') as f:
     long_description = f.read()
 
-setuptools.setup(name='czi-extractor',
+setuptools.setup(name='czi_extractor',
     version='0.0.1',
     description='Python package to extract slices from a CZI image.',
     author='Luis C. Garcia-Peraza Herrera',
