@@ -42,6 +42,7 @@ def convert_czi_to_png(input_czi_path, output_dir):
         color_name = metadata['ImageDocument']['Metadata']['DisplaySetting']['Channels']['Channel'][c]['Name']
 
         # Loop over the z-stack
+        max_intensity_proj = None
         for z in range(czi_data.shape[1]):
             # Construct the output PNG file path with slice number suffix
             output_png_path = os.path.join(output_dir, f"{fname}_color_{color_name}_slice_{z}.png")
@@ -54,9 +55,20 @@ def convert_czi_to_png(input_czi_path, output_dir):
             im_rgb[:, :, 2] *= blue 
             im_rgb = np.clip(np.round(im_rgb).astype(np.uint8), 0, 255)
 
+            # Compute maximum intensity projection
+            if max_intensity_proj is None:
+                max_intensity_proj = im_rgb
+            else:
+                max_intensity_proj = np.maximum(max_intensity_proj, im_rgb)
+
             # Convert the slice data to a PNG image using Pillow
             im = PIL.Image.fromarray(im_rgb)
             im.save(output_png_path)
+
+        # Save maximum intensity projection
+        output_mip_path = os.path.join(output_dir, f"{fname}_color_{color_name}_mip.png")
+        max_intensity_proj_im = PIL.Image.fromarray(max_intensity_proj)
+        max_intensity_proj_im.save(output_mip_path)
 
 def parse_cmdline():
     # Read command line arguments
