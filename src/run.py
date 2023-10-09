@@ -1,5 +1,6 @@
 """
-@brief   Extract all the slices of a z-stack in CZI format into a folder of PNG images.
+@brief   Extract all the slices of a z-stack in CZI format into a folder of 
+         PNG images.
 @author  Luis C. Garcia Peraza Herrera (luiscarlos.gph@gmail.com).
 @date    5 Oct 2023.
 """
@@ -8,9 +9,17 @@ import czifile
 import PIL.Image
 import argparse
 import numpy as np
+import skimage.restoration
 
 
-def hex_to_dec(hex_color):
+def hex_to_dec(hex_color: str):
+    """
+    @brief  Convert hex color to RGBA.
+    
+    @param[in]  hex_color  String containing #AARRGGBB.
+
+    @returns  a tuple of red, green blue, alpha. All of them integers [0, 255].
+    """
     # Remove the "#" if present in the input string
     if hex_color.startswith("#"):
         hex_color = hex_color[1:]
@@ -24,7 +33,81 @@ def hex_to_dec(hex_color):
     return red, green, blue, alpha
 
 
-def convert_czi_to_png(input_czi_path, output_dir):
+def save_mip(output_mip_path: str, z_stack: np.ndarray, red: int, green: int, 
+             blue: int):
+    """
+    @brief  Save the maximum intensity projection (MIP) of the provided stack 
+            to file.
+
+    @param[in]  output_mip_path  Path where the MIP will be saved.
+    @param[in]  z_stack          Image stack, shape (Z, H, W).
+    @param[in]  red              The projection is a grayscale image, this
+                                 is the red intensity equivalent to 255 in the
+                                 grayscale MIP image. 
+                                 Provided for visualization purposes.
+    @param[in]  green            Green intensity corresponding to 255 in the
+                                 grayscale MIP.
+    @param[in]  blue             Blue intensity corresponding to 255 in the
+                                 grayscale MIP.
+    @returns nothing.
+    """
+    # Compute maximum intensity projection (MIP)
+    mip_gray = np.max(z_stack, axis=0)
+
+    # Convert MIP to the color provided for visualization purposes
+    mip_rgb = np.stack([mip_gray.astype(np.float32) / 255.] * 3, axis=-1)
+    mip_rgb[:, :, 0] *= red 
+    mip_rgb[:, :, 1] *= green
+    mip_rgb[:, :, 2] *= blue 
+    mip_rgb = np.clip(np.round(mip_rgb).astype(np.uint8), 0, 255)
+
+    # Save MIP image
+    mip_im = PIL.Image.fromarray(mip_rgb)
+    mip_im.save(output_mip_path)
+
+
+def save_aip(output_aip_path: str, z_stack: np.ndarray, red: int, green: int, 
+             blue: int):
+    """
+    @brief  Save the average intensity projection (AIP) of the provided stack 
+            to file.
+
+    @param[in]  output_aip_path  Path where the AIP will be saved.
+    @param[in]  z_stack          Image stack, shape (Z, H, W).
+    @param[in]  red              The projection is a grayscale image, this
+                                 is the red intensity equivalent to 255 in the
+                                 grayscale MIP image. 
+                                 Provided for visualization purposes.
+    @param[in]  green            Green intensity corresponding to 255 in the
+                                 grayscale MIP.
+    @param[in]  blue             Blue intensity corresponding to 255 in the
+                                 grayscale MIP.
+    @returns nothing.
+    """
+    # Compute average intensity projection (AIP)
+    aip_gray = np.average(z_stack, axis=0)
+
+    # Convert AIP to the color provided for visualization purposes 
+    aip_rgb = np.stack([aip_gray.astype(np.float32) / 255.] * 3, axis=-1)
+    aip_rgb[:, :, 0] *= red 
+    aip_rgb[:, :, 1] *= green
+    aip_rgb[:, :, 2] *= blue 
+    aip_rgb = np.clip(np.round(aip_rgb).astype(np.uint8), 0, 255)
+    aip_im = PIL.Image.fromarray(aip_rgb)
+    aip_im.save(output_aip_path)
+
+
+def convert_czi_to_png(input_czi_path: str, output_dir: str):
+    """
+    @brief  Function that extracts the slices of the stack and saves them as
+            PNG images. It also saves the MIP and the AIP.
+
+    @param[in]  input_czi_path  Path to the input file contaiing the stack.
+    @param[in]  output_dir      Path to the output directory where the PNGs
+                                will be saved.
+
+    @returns  nothing.
+    """
     # Create the output folder if it doesn't exist
     os.makedirs(output_dir, exist_ok=True)
 
@@ -43,25 +126,11 @@ def convert_czi_to_png(input_czi_path, output_dir):
         
         # Save maximum intensity projection
         output_mip_path = os.path.join(output_dir, f"{fname}_color_{color_name}_mip.png")
-        mip_gray = np.max(czi_data[c], axis=0).astype(np.float32) / 255.
-        mip_rgb = np.stack([mip_gray] * 3, axis=-1)
-        mip_rgb[:, :, 0] *= red 
-        mip_rgb[:, :, 1] *= green
-        mip_rgb[:, :, 2] *= blue 
-        mip_rgb = np.clip(np.round(mip_rgb).astype(np.uint8), 0, 255)
-        mip_im = PIL.Image.fromarray(mip_rgb)
-        mip_im.save(output_mip_path)
+        save_mip(output_mip_path, czi_data[c], red, green, blue)
         
         # Save average intensity projection
         output_aip_path = os.path.join(output_dir, f"{fname}_color_{color_name}_aip.png")
-        aip_gray = np.average(czi_data[c], axis=0).astype(np.float32) / 255.
-        aip_rgb = np.stack([aip_gray] * 3, axis=-1)
-        aip_rgb[:, :, 0] *= red 
-        aip_rgb[:, :, 1] *= green
-        aip_rgb[:, :, 2] *= blue 
-        aip_rgb = np.clip(np.round(aip_rgb).astype(np.uint8), 0, 255)
-        aip_im = PIL.Image.fromarray(aip_rgb)
-        aip_im.save(output_aip_path)
+        save_aip(output_aip_path, czi_data[c], red, green, blue)
 
         # Loop over the z-stack saving the slices
         for z in range(czi_data.shape[1]):
@@ -99,8 +168,8 @@ def main():
     args = parse_cmdline()    
 
     # Perform the conversion
+    print("[INFO] Converting all the stack slices to PNG...")
     convert_czi_to_png(args.input, args.output)
-
     print("[INFO] Conversion complete. PNG images saved in the output folder.")
 
 
