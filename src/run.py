@@ -40,9 +40,30 @@ def convert_czi_to_png(input_czi_path, output_dir):
         # Get the color of the channel
         red, green, blue, alpha = hex_to_dec(metadata['ImageDocument']['Metadata']['DisplaySetting']['Channels']['Channel'][c]['Color'])
         color_name = metadata['ImageDocument']['Metadata']['DisplaySetting']['Channels']['Channel'][c]['Name']
+        
+        # Save maximum intensity projection
+        output_mip_path = os.path.join(output_dir, f"{fname}_color_{color_name}_mip.png")
+        mip_gray = np.max(czi_data[c], axis=0).astype(np.float32) / 255.
+        mip_rgb = np.stack([mip_gray] * 3, axis=-1)
+        mip_rgb[:, :, 0] *= red 
+        mip_rgb[:, :, 1] *= green
+        mip_rgb[:, :, 2] *= blue 
+        mip_rgb = np.clip(np.round(mip_rgb).astype(np.uint8), 0, 255)
+        mip_im = PIL.Image.fromarray(mip_rgb)
+        mip_im.save(output_mip_path)
+        
+        # Save average intensity projection
+        output_aip_path = os.path.join(output_dir, f"{fname}_color_{color_name}_aip.png")
+        aip_gray = np.average(czi_data[c], axis=0).astype(np.float32) / 255.
+        aip_rgb = np.stack([aip_gray] * 3, axis=-1)
+        aip_rgb[:, :, 0] *= red 
+        aip_rgb[:, :, 1] *= green
+        aip_rgb[:, :, 2] *= blue 
+        aip_rgb = np.clip(np.round(aip_rgb).astype(np.uint8), 0, 255)
+        aip_im = PIL.Image.fromarray(aip_rgb)
+        aip_im.save(output_aip_path)
 
-        # Loop over the z-stack
-        max_intensity_proj = None
+        # Loop over the z-stack saving the slices
         for z in range(czi_data.shape[1]):
             # Construct the output PNG file path with slice number suffix
             output_png_path = os.path.join(output_dir, f"{fname}_color_{color_name}_slice_{z}.png")
@@ -55,20 +76,10 @@ def convert_czi_to_png(input_czi_path, output_dir):
             im_rgb[:, :, 2] *= blue 
             im_rgb = np.clip(np.round(im_rgb).astype(np.uint8), 0, 255)
 
-            # Compute maximum intensity projection
-            if max_intensity_proj is None:
-                max_intensity_proj = im_rgb
-            else:
-                max_intensity_proj = np.maximum(max_intensity_proj, im_rgb)
-
             # Convert the slice data to a PNG image using Pillow
             im = PIL.Image.fromarray(im_rgb)
             im.save(output_png_path)
 
-        # Save maximum intensity projection
-        output_mip_path = os.path.join(output_dir, f"{fname}_color_{color_name}_mip.png")
-        max_intensity_proj_im = PIL.Image.fromarray(max_intensity_proj)
-        max_intensity_proj_im.save(output_mip_path)
 
 def parse_cmdline():
     # Read command line arguments

@@ -3,6 +3,13 @@ Description
 
 Python package to read a CZI image containing a z-stack and extract all the slices in PNG format.
 
+Besides extracting the confocal microscopy slices, this code comes with 
+additional feaures listed below.
+
+Features:
+   * Maximum intensity projection of the z-stack (saved with the suffix `_mip.png` in the output folder).
+   * Average intentity projection of the z-stack (saved with the suffix `_aip.png` in the output folder).
+
 
 Install
 -------
